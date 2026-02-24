@@ -1,0 +1,1323 @@
+ <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeForge</title>
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/lesser-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --glass: rgba(15, 23, 42, 0.85);
+            --accent1: #f472b6;
+            --accent2: #34d399;
+            --accent3: #fbbf24;
+            --accent4: #60a5fa;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 56px;
+            background: var(--glass);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.15rem;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent1));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+        }
+
+        .header-search {
+            position: relative;
+            flex: 1;
+            max-width: 320px;
+            margin: 0 1rem;
+        }
+
+        .header-search input {
+            width: 100%;
+            padding: 0.45rem 0.75rem 0.45rem 2.2rem;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            font-family: 'Inter', system-ui, sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .header-search input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .header-search input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .header-search .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .header-search .search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 100%;
+            max-height: 240px;
+            overflow-y: auto;
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 1100;
+        }
+
+        .header-search .search-results.active {
+            display: block;
+        }
+
+        .header-search .search-result-item {
+            padding: 0.55rem 0.85rem;
+            font-size: 0.78rem;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.15s;
+        }
+
+        .header-search .search-result-item:hover {
+            background: rgba(99, 102, 241, 0.12);
+        }
+
+        .header-search .search-result-item .result-badge {
+            min-width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header-search .no-results {
+            padding: 0.75rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .hamburger {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background 0.2s, transform 0.2s;
+            color: var(--text);
+        }
+
+        .hamburger:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.05);
+        }
+
+        /* ========== NAV OVERLAY ========== */
+        nav {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 56px);
+            background: var(--glass);
+            backdrop-filter: blur(24px) saturate(180%);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            padding: 1.5rem;
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        nav.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        nav ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            width: 100%;
+            max-width: 1100px;
+            height: fit-content;
+        }
+
+        nav ul li a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.7rem 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        nav ul li a:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            color: #fff;
+            background: var(--surface-light);
+            box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.25);
+        }
+
+        nav ul li a.nav-active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* ========== SECTIONS ========== */
+        main {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            padding-top: 56px;
+        }
+
+        section {
+            position: absolute;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(12px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        section.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* ========== SECTION HEADER ========== */
+        .section-header {
+            padding: 0.6rem 1.25rem;
+            background: var(--surface);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.7rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        /* ========== CODE EDITOR TABS ========== */
+        .editor-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            background: var(--surface);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 0 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .editor-tab {
+            padding: 0.55rem 1rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .editor-tab:hover {
+            color: var(--text);
+        }
+
+        .editor-tab.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary-light);
+        }
+
+        .editor-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+        }
+
+        .editor-btn {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            background: var(--surface-light);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .editor-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* ========== EDITOR + OUTPUT SPLIT ========== */
+        .editor-split {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .code-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .code-pane .CodeMirror {
+            flex: 1;
+            height: auto !important;
+            font-size: 13px;
+        }
+
+        .code-pane .CodeMirror.cm-hidden {
+            display: none;
+        }
+
+        .output-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .output-pane iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+        }
+
+        .output-label {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--surface);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* ========== GITHUB MODAL ========== */
+        .git-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .git-modal-overlay.active {
+            display: flex;
+        }
+
+        .git-modal {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.75rem;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+        }
+
+        .git-modal h3 {
+            margin: 0 0 0.25rem;
+            font-size: 1.1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .git-modal .modal-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .git-modal input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            font-family: 'Inter', system-ui, sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .git-modal input:focus {
+            border-color: var(--primary);
+        }
+
+        .git-modal input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .git-modal .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+
+        .git-modal .modal-btn {
+            padding: 0.55rem 1.1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .git-modal .btn-cancel {
+            background: var(--surface-light);
+            color: var(--text-muted);
+        }
+
+        .git-modal .btn-cancel:hover {
+            background: #475569;
+            color: #fff;
+        }
+
+        .git-modal .btn-import {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .git-modal .btn-import:hover {
+            background: var(--primary-light);
+        }
+
+        .git-modal .btn-import:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .git-modal .git-status {
+            font-size: 0.75rem;
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .git-modal .git-status.info {
+            display: block;
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--primary-light);
+        }
+
+        .git-modal .git-status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+        }
+
+        .git-modal .git-status.success {
+            display: block;
+            background: rgba(52, 211, 153, 0.12);
+            color: #34d399;
+        }
+
+        .git-modal .git-files-preview {
+            margin-top: 0.75rem;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .git-modal .git-files-preview span {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            margin: 2px;
+            background: var(--bg);
+            border-radius: 6px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        /* ========== RESIZE HANDLE ========== */
+        .resize-handle {
+            width: 6px;
+            cursor: col-resize;
+            background: rgba(255, 255, 255, 0.06);
+            transition: background 0.2s;
+            position: relative;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .resize-handle:hover,
+        .resize-handle.dragging {
+            background: var(--primary);
+        }
+
+        .resize-handle:hover::after,
+        .resize-handle.dragging::after {
+            height: 48px;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        body.resizing {
+            cursor: col-resize !important;
+            user-select: none !important;
+        }
+
+        body.resizing iframe {
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .resize-handle {
+                width: 100%;
+                height: 6px;
+                cursor: row-resize;
+            }
+
+            .resize-handle::after {
+                width: 32px;
+                height: 2px;
+            }
+
+            .resize-handle:hover::after,
+            .resize-handle.dragging::after {
+                width: 48px;
+                height: 2px;
+            }
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-light);
+            border-radius: 3px;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .editor-split {
+                flex-direction: column;
+            }
+
+            .code-pane {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            }
+
+            nav ul {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">🪼CodeForge</div>
+        <div class="header-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search sections..." autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+        <div class="hamburger" id="hamburgerBtn">☰</div>
+    </header>
+
+    <nav id="navbar">
+        <ul id="menu-list"></ul>
+    </nav>
+
+    <main id="content"></main>
+
+    <script>
+        const TOTAL = 50;
+        const menuList = document.getElementById('menu-list');
+        const content = document.getElementById('content');
+        const navbar = document.getElementById('navbar');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        let activeSectionIndex = 0;
+
+        // Color palette for section badges
+        const badgeColors = ['#6366f1', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#a78bfa', '#fb7185', '#2dd4bf', '#f59e0b', '#38bdf8'];
+
+        hamburgerBtn.addEventListener('click', () => navbar.classList.toggle('active'));
+
+        // ========== SEARCH SECTIONS ==========
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            if (!query) {
+                searchResults.classList.remove('active');
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            const sections = document.querySelectorAll('section');
+            let html = '';
+            let matchCount = 0;
+
+            sections.forEach((sec, i) => {
+                const title = sec.querySelector('.section-title')?.textContent || `Section ${i + 1}`;
+                if (title.toLowerCase().includes(query)) {
+                    const color = badgeColors[i % badgeColors.length];
+                    html += `<div class="search-result-item" data-index="${i}">`;
+                    html += `<span class="result-badge" style="background:${color}">${i + 1}</span>`;
+                    html += `<span>${title}</span></div>`;
+                    matchCount++;
+                }
+            });
+
+            if (matchCount === 0) {
+                html = '<div class="no-results">No sections found</div>';
+            }
+
+            searchResults.innerHTML = html;
+            searchResults.classList.add('active');
+
+            // Click on a result to jump to section
+            searchResults.querySelectorAll('.search-result-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const idx = parseInt(item.dataset.index);
+                    showSection(idx);
+                    searchInput.value = '';
+                    searchResults.classList.remove('active');
+                    searchResults.innerHTML = '';
+                });
+            });
+        });
+
+        // Enter key jumps to first result
+        searchInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const first = searchResults.querySelector('.search-result-item');
+                if (first) {
+                    first.click();
+                }
+            }
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                searchResults.classList.remove('active');
+                searchResults.innerHTML = '';
+                searchInput.blur();
+            }
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.header-search')) {
+                searchResults.classList.remove('active');
+                searchResults.innerHTML = '';
+            }
+        });
+
+        function showSection(index) {
+            document.querySelectorAll('section').forEach((s, i) => {
+                s.classList.toggle('active', i === index);
+            });
+            // Update nav active state
+            document.querySelectorAll('#menu-list a').forEach((a, i) => {
+                a.classList.toggle('nav-active', i === index);
+            });
+            activeSectionIndex = index;
+            navbar.classList.remove('active');
+
+            // Initialize CodeMirror for this section if not already done
+            initEditors(index);
+        }
+
+        // Store editor instances
+        const editors = {};
+
+        function initEditors(index) {
+            if (editors[index]) return; // already initialized
+
+            const sec = document.querySelectorAll('section')[index];
+            if (!sec) return;
+
+            const htmlTA = sec.querySelector('.ta-html');
+            const cssTA = sec.querySelector('.ta-css');
+            const jsTA = sec.querySelector('.ta-js');
+            const pyTA = sec.querySelector('.ta-python');
+
+            const htmlEd = CodeMirror.fromTextArea(htmlTA, { mode: 'xml', theme: 'lesser-dark', lineNumbers: true });
+            const cssEd = CodeMirror.fromTextArea(cssTA, { mode: 'css', theme: 'lesser-dark', lineNumbers: true });
+            const jsEd = CodeMirror.fromTextArea(jsTA, { mode: 'javascript', theme: 'lesser-dark', lineNumbers: true });
+            const pyEd = CodeMirror.fromTextArea(pyTA, { mode: 'python', theme: 'lesser-dark', lineNumbers: true });
+
+            // Set default content
+            htmlEd.setValue(`<!-- Section ${index + 1} -->\n<h1>Hello from Section ${index + 1}!</h1>\n<p>Start coding here...</p>`);
+
+            editors[index] = { html: htmlEd, css: cssEd, js: jsEd, python: pyEd, activeTab: 'html' };
+
+            // Hide non-active editors
+            cssEd.getWrapperElement().classList.add('cm-hidden');
+            jsEd.getWrapperElement().classList.add('cm-hidden');
+            pyEd.getWrapperElement().classList.add('cm-hidden');
+
+            // Auto-run on change
+            const runFn = () => runCode(index);
+            htmlEd.on('change', runFn);
+            cssEd.on('change', runFn);
+            jsEd.on('change', runFn);
+
+            // Refresh after init
+            setTimeout(() => {
+                htmlEd.refresh();
+                cssEd.refresh();
+                jsEd.refresh();
+                pyEd.refresh();
+                runCode(index);
+            }, 50);
+        }
+
+        function switchTab(index, tab) {
+            const ed = editors[index];
+            if (!ed) return;
+
+            const sec = document.querySelectorAll('section')[index];
+            sec.querySelectorAll('.editor-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+
+            ['html', 'css', 'js', 'python'].forEach(t => {
+                const wrapper = ed[t].getWrapperElement();
+                if (t === tab) {
+                    wrapper.classList.remove('cm-hidden');
+                    ed[t].refresh();
+                } else {
+                    wrapper.classList.add('cm-hidden');
+                }
+            });
+            ed.activeTab = tab;
+        }
+
+        function runCode(index) {
+            const ed = editors[index];
+            if (!ed) return;
+
+            const html = ed.html.getValue();
+            const css = `<style>${ed.css.getValue()}</style>`;
+            const js = `<scr` + `ipt>${ed.js.getValue()}</scr` + `ipt>`;
+
+            const sec = document.querySelectorAll('section')[index];
+            const iframe = sec.querySelector('iframe');
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(html + css + js);
+            doc.close();
+        }
+
+        function saveFiles(index) {
+            const ed = editors[index];
+            if (!ed) return;
+
+            const zip = new JSZip();
+            if (ed.html.getValue()) zip.file('index.html', ed.html.getValue());
+            if (ed.css.getValue()) zip.file('styles.css', ed.css.getValue());
+            if (ed.js.getValue()) zip.file('script.js', ed.js.getValue());
+            if (ed.python.getValue()) zip.file('script.py', ed.python.getValue());
+
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                saveAs(blob, `section_${index + 1}_code.zip`);
+            });
+        }
+
+        function loadFile(index) {
+            const sec = document.querySelectorAll('section')[index];
+            const input = sec.querySelector('.file-input');
+            const file = input.files[0];
+            if (!file) return;
+
+            const ed = editors[index];
+            if (!ed) return;
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'html') { ed.html.setValue(e.target.result); switchTab(index, 'html'); }
+                else if (ext === 'css') { ed.css.setValue(e.target.result); switchTab(index, 'css'); }
+                else if (ext === 'js') { ed.js.setValue(e.target.result); switchTab(index, 'js'); }
+                else if (ext === 'py') { ed.python.setValue(e.target.result); switchTab(index, 'python'); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ========== RESIZE LOGIC ==========
+        let resizeState = null;
+
+        function startResize(e, index) {
+            e.preventDefault();
+            const sec = document.querySelectorAll('section')[index];
+            const split = sec.querySelector('.editor-split');
+            const codePane = split.querySelector('.code-pane');
+            const outputPane = split.querySelector('.output-pane');
+            const handle = split.querySelector('.resize-handle');
+            const isVertical = window.innerWidth <= 768;
+
+            handle.classList.add('dragging');
+            document.body.classList.add('resizing');
+
+            resizeState = {
+                split, codePane, outputPane, handle, index, isVertical,
+                startPos: isVertical ? e.clientY : e.clientX,
+                startCodeSize: isVertical ? codePane.offsetHeight : codePane.offsetWidth,
+                startOutputSize: isVertical ? outputPane.offsetHeight : outputPane.offsetWidth
+            };
+
+            document.addEventListener('mousemove', onResize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+        function onResize(e) {
+            if (!resizeState) return;
+            const { codePane, outputPane, isVertical, startPos, startCodeSize, startOutputSize } = resizeState;
+            const currentPos = isVertical ? e.clientY : e.clientX;
+            const delta = currentPos - startPos;
+            const newCode = Math.max(100, startCodeSize + delta);
+            const newOutput = Math.max(100, startOutputSize - delta);
+
+            codePane.style.flex = 'none';
+            outputPane.style.flex = 'none';
+
+            if (isVertical) {
+                codePane.style.height = newCode + 'px';
+                outputPane.style.height = newOutput + 'px';
+            } else {
+                codePane.style.width = newCode + 'px';
+                outputPane.style.width = newOutput + 'px';
+            }
+
+            // Refresh editors so CodeMirror reflows
+            const ed = editors[resizeState.index];
+            if (ed) {
+                ['html', 'css', 'js', 'python'].forEach(t => ed[t].refresh());
+            }
+        }
+
+        function stopResize() {
+            if (resizeState) {
+                resizeState.handle.classList.remove('dragging');
+                document.body.classList.remove('resizing');
+                resizeState = null;
+            }
+            document.removeEventListener('mousemove', onResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        // ========== BUILD ALL 50 SECTIONS ==========
+        for (let i = 0; i < TOTAL; i++) {
+            // Nav link
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = '#';
+            a.textContent = `${i + 1}`;
+            a.title = `Section ${i + 1}`;
+            a.addEventListener('click', e => { e.preventDefault(); showSection(i); });
+            if (i === 0) a.classList.add('nav-active');
+            li.appendChild(a);
+            menuList.appendChild(li);
+
+            // Section
+            const section = document.createElement('section');
+            if (i === 0) section.classList.add('active');
+
+            const badgeColor = badgeColors[i % badgeColors.length];
+
+            section.innerHTML = `
+        <div class="section-header">
+            <span class="section-badge" style="background:${badgeColor}">${i + 1}</span>
+            <span class="section-title">Section ${i + 1} — Code Editor</span>
+        </div>
+        <div class="editor-tabs">
+            <button class="editor-tab active" data-tab="html" onclick="switchTab(${i},'html')">HTML</button>
+            <button class="editor-tab" data-tab="css" onclick="switchTab(${i},'css')">CSS</button>
+            <button class="editor-tab" data-tab="js" onclick="switchTab(${i},'js')">JavaScript</button>
+            <button class="editor-tab" data-tab="python" onclick="switchTab(${i},'python')">Python</button>
+            <div class="editor-actions">
+                <button class="editor-btn" onclick="openGitModal(${i})">🦑 Git Import</button>
+                <button class="editor-btn" onclick="saveFiles(${i})">💾 Save</button>
+                <label class="editor-btn" style="cursor:pointer">📂 Open
+                    <input type="file" class="file-input" onchange="loadFile(${i})" style="display:none">
+                </label>
+            </div>
+        </div>
+        <div class="editor-split">
+            <div class="code-pane">
+                <textarea class="ta-html"></textarea>
+                <textarea class="ta-css" style="display:none"></textarea>
+                <textarea class="ta-js" style="display:none"></textarea>
+                <textarea class="ta-python" style="display:none"></textarea>
+            </div>
+            <div class="resize-handle" onmousedown="startResize(event, ${i})"></div>
+            <div class="output-pane">
+                <div class="output-label">▶ Live Preview</div>
+                <iframe sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+        </div>
+    `;
+            content.appendChild(section);
+        }
+
+        // Initialize first section
+        showSection(0);
+
+        // ========== GITHUB IMPORT ==========
+        let gitImportTarget = 0;
+
+        // Add modal to DOM
+        const gitModalHTML = `
+        <div class="git-modal-overlay" id="gitModal">
+            <div class="git-modal">
+                <h3>🐙 Clone from GitHub</h3>
+                <p class="modal-desc">Paste any GitHub URL — clone link, repo, folder, or single file.<br>
+                    <em>e.g. https://github.com/user/repo.git&nbsp; or&nbsp; https://github.com/user/repo/tree/main/src</em></p>
+                <input type="text" id="gitUrlInput" placeholder="https://github.com/username/repo.git" autocomplete="off">
+                <div class="git-status" id="gitStatus"></div>
+                <div class="git-files-preview" id="gitFilesPreview"></div>
+                <div class="modal-actions">
+                    <button class="modal-btn btn-cancel" onclick="closeGitModal()">Cancel</button>
+                    <button class="modal-btn btn-import" id="gitImportBtn" onclick="doGitImport()">🔽 Clone &amp; Import</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', gitModalHTML);
+
+        function openGitModal(index) {
+            gitImportTarget = index;
+            initEditors(index);
+            document.getElementById('gitUrlInput').value = '';
+            setGitStatus('', '');
+            document.getElementById('gitFilesPreview').innerHTML = '';
+            document.getElementById('gitImportBtn').disabled = false;
+            document.getElementById('gitModal').classList.add('active');
+            setTimeout(() => document.getElementById('gitUrlInput').focus(), 100);
+        }
+
+        function closeGitModal() {
+            document.getElementById('gitModal').classList.remove('active');
+        }
+
+        function setGitStatus(msg, type) {
+            const el = document.getElementById('gitStatus');
+            el.textContent = msg;
+            el.className = 'git-status' + (type ? ' ' + type : '');
+        }
+
+        function parseGitHubUrl(url) {
+            // Normalize: strip trailing slashes, .git suffix
+            url = url.trim().replace(/\/+$/, '').replace(/\.git$/, '');
+
+            // Supports:
+            //   https://github.com/user/repo.git          (clone URL)
+            //   https://github.com/user/repo               (repo root)
+            //   https://github.com/user/repo/tree/branch/path  (folder)
+            //   https://github.com/user/repo/blob/branch/file  (single file)
+            //   git@github.com:user/repo.git               (SSH clone)
+            const sshMatch = url.match(/git@github\.com:([^\/]+)\/(.+)/);
+            if (sshMatch) {
+                return { owner: sshMatch[1], repo: sshMatch[2], type: 'tree', branch: 'main', path: '' };
+            }
+
+            const m = url.match(/github\.com\/([^\/]+)\/([^\/]+?)(?:\/(tree|blob)\/([^\/]+)\/?(.*))?$/);
+            if (!m) return null;
+            return { owner: m[1], repo: m[2], type: m[3] || 'tree', branch: m[4] || 'main', path: m[5] || '' };
+        }
+
+        // Supported web file extensions only
+        const SUPPORTED_EXTS = { 'html': 'html', 'htm': 'html', 'css': 'css', 'js': 'js' };
+
+        async function doGitImport() {
+            const url = document.getElementById('gitUrlInput').value.trim();
+            const parsed = parseGitHubUrl(url);
+            if (!parsed) {
+                setGitStatus('❌ Invalid GitHub URL. Paste a repo link, clone URL, folder, or file path.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('gitImportBtn');
+            btn.disabled = true;
+            document.getElementById('gitFilesPreview').innerHTML = '';
+            setGitStatus(`⏳ Cloning ${parsed.owner}/${parsed.repo}...`, 'info');
+
+            try {
+                // Use the Git Trees API with recursive flag to scan the full repo tree
+                const treeUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${parsed.branch}?recursive=1`;
+                const treeResp = await fetch(treeUrl);
+                if (!treeResp.ok) {
+                    const errData = await treeResp.json().catch(() => ({}));
+                    throw new Error(errData.message || `HTTP ${treeResp.status}`);
+                }
+
+                const treeData = await treeResp.json();
+                const allFiles = treeData.tree.filter(item => item.type === 'blob');
+
+                // Filter by path prefix (if user pointed to a subfolder)
+                const pathPrefix = parsed.path ? parsed.path + '/' : '';
+                const scopedFiles = parsed.path
+                    ? allFiles.filter(f => f.path === parsed.path || f.path.startsWith(pathPrefix))
+                    : allFiles;
+
+                // Filter to .html, .css, .js only
+                const webFiles = scopedFiles.filter(f => {
+                    const ext = f.path.split('.').pop().toLowerCase();
+                    return SUPPORTED_EXTS[ext];
+                });
+
+                if (webFiles.length === 0) {
+                    setGitStatus('⚠️ No .html, .css, or .js files found in this repo/path.', 'error');
+                    btn.disabled = false;
+                    return;
+                }
+
+                // ========== GROUP: each HTML file → its own section ==========
+                // Separate HTML files from CSS/JS files
+                const htmlFiles = webFiles.filter(f => {
+                    const ext = f.path.split('.').pop().toLowerCase();
+                    return ext === 'html' || ext === 'htm';
+                });
+                const nonHtmlFiles = webFiles.filter(f => {
+                    const ext = f.path.split('.').pop().toLowerCase();
+                    return ext !== 'html' && ext !== 'htm';
+                });
+
+                // Group non-HTML files by folder for sharing
+                const folderAssets = {};
+                for (const f of nonHtmlFiles) {
+                    const lastSlash = f.path.lastIndexOf('/');
+                    const folder = lastSlash >= 0 ? f.path.substring(0, lastSlash) : '(root)';
+                    if (!folderAssets[folder]) folderAssets[folder] = [];
+                    folderAssets[folder].push(f);
+                }
+
+                // If no HTML files found, fall back to grouping by folder
+                const sectionEntries = htmlFiles.length > 0
+                    ? htmlFiles.map(f => {
+                        const lastSlash = f.path.lastIndexOf('/');
+                        const folder = lastSlash >= 0 ? f.path.substring(0, lastSlash) : '(root)';
+                        return { htmlFile: f, folder, name: f.path.split('/').pop() };
+                    })
+                    : [{ htmlFile: null, folder: Object.keys(folderAssets)[0] || '(root)', name: 'assets' }];
+
+                const sectionCount = sectionEntries.length;
+
+                // Check if we have enough sections
+                if (gitImportTarget + sectionCount > TOTAL) {
+                    setGitStatus(`⚠️ ${sectionCount} HTML files found but only ${TOTAL - gitImportTarget} sections left. Some will be skipped.`, 'error');
+                }
+
+                // Show file preview
+                let previewHTML = '';
+                sectionEntries.forEach((entry, i) => {
+                    const sectionNum = gitImportTarget + i + 1;
+                    previewHTML += `<div style="margin:4px 0"><strong style="color:var(--primary-light)">📄 ${entry.name}</strong> → Section ${sectionNum}`;
+                    const assets = folderAssets[entry.folder] || [];
+                    if (assets.length) {
+                        previewHTML += '<br>';
+                        assets.forEach(f => {
+                            previewHTML += `<span>  ${f.path.split('/').pop()}</span>`;
+                        });
+                    }
+                    previewHTML += `</div>`;
+                });
+                document.getElementById('gitFilesPreview').innerHTML = previewHTML;
+
+                const totalFiles = webFiles.length;
+                setGitStatus(`⏳ Downloading ${totalFiles} file(s) into ${sectionCount} section(s)...`, 'info');
+
+                // ========== LOAD EACH HTML FILE INTO A SEPARATE SECTION ==========
+                let loadedSections = 0;
+                for (let si = 0; si < sectionCount; si++) {
+                    const sectionIdx = gitImportTarget + si;
+                    if (sectionIdx >= TOTAL) break;
+
+                    const entry = sectionEntries[si];
+
+                    // Initialize the target section's editors
+                    initEditors(sectionIdx);
+                    const ed = editors[sectionIdx];
+                    if (!ed) continue;
+
+                    // Clear editors first
+                    ed.html.setValue('');
+                    ed.css.setValue('');
+                    ed.js.setValue('');
+                    ed.python.setValue('');
+
+                    // Update section header title
+                    const sec = document.querySelectorAll('section')[sectionIdx];
+                    const titleEl = sec.querySelector('.section-title');
+                    titleEl.textContent = `Section ${sectionIdx + 1} — ${entry.name}`;
+
+                    // Load the HTML file for this section
+                    if (entry.htmlFile) {
+                        const rawUrl = `https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/${parsed.branch}/${entry.htmlFile.path}`;
+                        const raw = await fetch(rawUrl);
+                        const content = await raw.text();
+                        ed.html.setValue(content);
+                    }
+
+                    // Load CSS/JS assets from the same folder
+                    const assets = folderAssets[entry.folder] || [];
+                    for (const file of assets) {
+                        const rawUrl = `https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/${parsed.branch}/${file.path}`;
+                        const raw = await fetch(rawUrl);
+                        const content = await raw.text();
+                        const ext = file.path.split('.').pop().toLowerCase();
+                        const tab = SUPPORTED_EXTS[ext];
+
+                        if (tab && ed[tab]) {
+                            const existing = ed[tab].getValue();
+                            if (existing) {
+                                ed[tab].setValue(existing + '\n\n/* === ' + file.path.split('/').pop() + ' === */\n' + content);
+                            } else {
+                                ed[tab].setValue(content);
+                            }
+                        }
+                    }
+
+                    // Run preview for each section
+                    switchTab(sectionIdx, 'html');
+                    runCode(sectionIdx);
+                    loadedSections++;
+                }
+
+                // Navigate to the first imported section
+                showSection(gitImportTarget);
+
+                setGitStatus(`✅ Cloned! ${loadedSections} section(s) loaded (Sections ${gitImportTarget + 1}–${gitImportTarget + loadedSections}, ${totalFiles} files total)`, 'success');
+                setTimeout(closeGitModal, 2500);
+            } catch (err) {
+                setGitStatus(`❌ ${err.message}`, 'error');
+            }
+            btn.disabled = false;
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('gitModal').addEventListener('click', e => {
+            if (e.target.id === 'gitModal') closeGitModal();
+        });
+
+        // Enter key to import
+        document.getElementById('gitUrlInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doGitImport();
+        });
+
+        // ========== KEYBOARD SHORTCUTS ==========
+        const TAB_ORDER = ['html', 'css', 'js', 'python'];
+        let tabHeld = false;
+
+        document.addEventListener('keyup', e => {
+            if (e.key === 'Tab') tabHeld = false;
+        });
+
+        document.addEventListener('keydown', e => {
+            // Alt + Arrow Left/Right to switch editor tabs
+            if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                e.preventDefault();
+                const ed = editors[activeSectionIndex];
+                if (!ed) return;
+                const currentIdx = TAB_ORDER.indexOf(ed.activeTab);
+                let newIdx;
+                if (e.key === 'ArrowRight') {
+                    newIdx = (currentIdx + 1) % TAB_ORDER.length;
+                } else {
+                    newIdx = (currentIdx - 1 + TAB_ORDER.length) % TAB_ORDER.length;
+                }
+                switchTab(activeSectionIndex, TAB_ORDER[newIdx]);
+            }
+            // Tab + Arrow Left/Right to switch sections
+            if (e.key === 'Tab') {
+                tabHeld = true;
+                e.preventDefault();
+                return;
+            }
+            if (tabHeld && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                e.preventDefault();
+                let newSection;
+                if (e.key === 'ArrowRight') {
+                    newSection = (activeSectionIndex + 1) % TOTAL;
+                } else {
+                    newSection = (activeSectionIndex - 1 + TOTAL) % TOTAL;
+                }
+                showSection(newSection);
+                return;
+            }
+            if (e.ctrlKey && e.key === 'f') { e.preventDefault(); document.documentElement.requestFullscreen?.(); }
+            if (e.ctrlKey && e.key === 'q') {
+                e.preventDefault();
+                const ed = editors[activeSectionIndex];
+                if (!ed) return;
+                const win = window.open('', '', 'width=900,height=600');
+                const html = ed.html.getValue();
+                const css = `<style>${ed.css.getValue()}</style>`;
+                const js = `<scr` + `ipt>${ed.js.getValue()}</scr` + `ipt>`;
+                win.document.write(html + css + js);
+                win.document.close();
+            }
+            if (e.ctrlKey && e.key === 'o') {
+                e.preventDefault();
+                const sec = document.querySelectorAll('section')[activeSectionIndex];
+                sec?.querySelector('iframe')?.requestFullscreen?.();
+            }
+        });
+    </script>
+
+</body>
+
+</html>

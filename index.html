@@ -1,3 +1,5 @@
+
+
  <!DOCTYPE html>
 <html lang="en">
 
@@ -12,7 +14,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -414,6 +415,286 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
+        /* ========== CONSOLE ========== */
+        .console-pane {
+            height: 0;
+            overflow: hidden;
+            background: #0d1117;
+            border-top: 2px solid rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            transition: height 0.3s cubic-bezier(0.4,0,0.2,1);
+            flex-shrink: 0;
+        }
+
+        .console-pane.open {
+            height: 220px;
+        }
+
+        .console-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            background: #161b22;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            flex-shrink: 0;
+        }
+
+        .console-toolbar-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #8b949e;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        .con-filter-btns {
+            display: flex;
+            gap: 2px;
+            margin-left: 0.4rem;
+        }
+
+        .con-filter-btn {
+            padding: 0.15rem 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            background: none;
+            cursor: pointer;
+            color: #8b949e;
+            transition: all 0.15s;
+        }
+
+        .con-filter-btn:hover { background: rgba(255,255,255,0.06); color: #e6edf3; }
+        .con-filter-btn.active { background: rgba(99,102,241,0.18); color: var(--primary-light); border-color: rgba(99,102,241,0.3); }
+        .con-filter-btn.f-warn.active { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+        .con-filter-btn.f-error.active { background: rgba(248,113,113,0.12); color: #f87171; border-color: rgba(248,113,113,0.3); }
+        .con-filter-btn.f-info.active { background: rgba(96,165,250,0.12); color: #60a5fa; border-color: rgba(96,165,250,0.3); }
+
+        .con-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            font-size: 0.58rem;
+            font-weight: 700;
+            padding: 0 4px;
+            margin-left: 3px;
+            line-height: 1;
+        }
+
+        .console-search-wrap {
+            position: relative;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .console-search {
+            background: #0d1117;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 0.68rem;
+            padding: 0.2rem 0.5rem 0.2rem 1.5rem;
+            width: 130px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s, width 0.2s;
+        }
+
+        .console-search:focus {
+            border-color: var(--primary);
+            width: 170px;
+        }
+
+        .console-search::placeholder { color: #484f58; }
+
+        .console-search-icon {
+            position: absolute;
+            left: 0.4rem;
+            font-size: 0.65rem;
+            color: #484f58;
+            pointer-events: none;
+        }
+
+        .con-btn-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #8b949e;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .con-btn-icon:hover { background: rgba(255,255,255,0.07); color: #e6edf3; }
+
+        .console-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-family: 'Cascadia Code', 'Fira Mono', 'Consolas', monospace;
+            font-size: 0.72rem;
+            line-height: 1.5;
+            padding: 0;
+        }
+
+        .console-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            min-height: 22px;
+            cursor: default;
+            transition: background 0.1s;
+            position: relative;
+        }
+
+        .console-entry:hover { background: rgba(255,255,255,0.025); }
+
+        .console-entry.type-log   { border-left: 3px solid transparent; }
+        .console-entry.type-warn  { border-left: 3px solid #fbbf24; background: rgba(251,191,36,0.04); }
+        .console-entry.type-error { border-left: 3px solid #f87171; background: rgba(248,113,113,0.06); }
+        .console-entry.type-info  { border-left: 3px solid #60a5fa; background: rgba(96,165,250,0.04); }
+        .console-entry.type-log.user-input { border-left: 3px solid #6366f1; background: rgba(99,102,241,0.04); }
+
+        .console-entry.hidden { display: none; }
+
+        .con-gutter {
+            width: 36px;
+            flex-shrink: 0;
+            padding: 3px 4px 3px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 3px;
+        }
+
+        .con-icon {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+
+        .con-repeat {
+            display: none;
+            min-width: 18px;
+            height: 16px;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: #fff;
+            font-size: 0.58rem;
+            font-weight: 700;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+        }
+
+        .con-repeat.visible { display: flex; }
+
+        .con-message {
+            flex: 1;
+            padding: 3px 8px 3px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #e6edf3;
+        }
+
+        .console-entry.type-warn  .con-message { color: #fde68a; }
+        .console-entry.type-error .con-message { color: #fca5a5; }
+        .console-entry.type-info  .con-message { color: #93c5fd; }
+
+        .con-string { color: #79c0ff; }
+        .con-number { color: #a5d6ff; }
+        .con-boolean { color: #ff7b72; }
+        .con-null { color: #8b949e; font-style: italic; }
+        .con-key { color: #d2a8ff; }
+        .con-obj-preview { color: #8b949e; cursor: pointer; }
+        .con-obj-preview:hover { color: #e6edf3; text-decoration: underline; }
+        .con-timestamp { color: #484f58; font-size: 0.62rem; padding: 4px 4px 0 0; flex-shrink: 0; min-width: 58px; text-align: right; }
+
+        .con-expandable { cursor: pointer; }
+        .con-tree { margin: 2px 0 4px 16px; display: none; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 8px; }
+        .con-tree.open { display: block; }
+        .con-tree-row { padding: 1px 0; color: #8b949e; white-space: pre-wrap; word-break: break-word; }
+
+        .console-input-row {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            background: #0d1117;
+            flex-shrink: 0;
+        }
+
+        .con-input-icon {
+            padding: 0 6px 0 10px;
+            color: #6366f1;
+            font-size: 0.8rem;
+            font-weight: 700;
+            user-select: none;
+            font-family: monospace;
+        }
+
+        .con-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: #e6edf3;
+            font-family: 'Cascadia Code', 'Fira Mono', 'Consolas', monospace;
+            font-size: 0.72rem;
+            padding: 5px 8px 5px 0;
+        }
+
+        .con-input::placeholder { color: #30363d; }
+
+        .console-toggle {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            background: var(--surface-light);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .console-toggle:hover { background: rgba(99,102,241,0.15); color: #fff; border-color: rgba(99,102,241,0.3); }
+        .console-toggle.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .con-error-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 14px;
+            height: 14px;
+            border-radius: 7px;
+            background: #f87171;
+            color: #fff;
+            font-size: 0.55rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 3px;
+        }
+
+        .con-error-count.visible { display: flex; }
+
         /* ========== GITHUB MODAL ========== */
         .git-modal-overlay {
             position: fixed;
@@ -793,22 +1074,19 @@
             const htmlTA = sec.querySelector('.ta-html');
             const cssTA = sec.querySelector('.ta-css');
             const jsTA = sec.querySelector('.ta-js');
-            const pyTA = sec.querySelector('.ta-python');
 
             const htmlEd = CodeMirror.fromTextArea(htmlTA, { mode: 'xml', theme: 'lesser-dark', lineNumbers: true });
             const cssEd = CodeMirror.fromTextArea(cssTA, { mode: 'css', theme: 'lesser-dark', lineNumbers: true });
             const jsEd = CodeMirror.fromTextArea(jsTA, { mode: 'javascript', theme: 'lesser-dark', lineNumbers: true });
-            const pyEd = CodeMirror.fromTextArea(pyTA, { mode: 'python', theme: 'lesser-dark', lineNumbers: true });
 
             // Set default content
             htmlEd.setValue(`<!-- Section ${index + 1} -->\n<h1>Hello from Section ${index + 1}!</h1>\n<p>Start coding here...</p>`);
 
-            editors[index] = { html: htmlEd, css: cssEd, js: jsEd, python: pyEd, activeTab: 'html' };
+            editors[index] = { html: htmlEd, css: cssEd, js: jsEd, activeTab: 'html' };
 
             // Hide non-active editors
             cssEd.getWrapperElement().classList.add('cm-hidden');
             jsEd.getWrapperElement().classList.add('cm-hidden');
-            pyEd.getWrapperElement().classList.add('cm-hidden');
 
             // Auto-run on change
             const runFn = () => runCode(index);
@@ -821,7 +1099,6 @@
                 htmlEd.refresh();
                 cssEd.refresh();
                 jsEd.refresh();
-                pyEd.refresh();
                 runCode(index);
             }, 50);
         }
@@ -835,7 +1112,7 @@
                 t.classList.toggle('active', t.dataset.tab === tab);
             });
 
-            ['html', 'css', 'js', 'python'].forEach(t => {
+            ['html', 'css', 'js'].forEach(t => {
                 const wrapper = ed[t].getWrapperElement();
                 if (t === tab) {
                     wrapper.classList.remove('cm-hidden');
@@ -847,6 +1124,332 @@
             ed.activeTab = tab;
         }
 
+        // ========== IDE CONSOLE ==========
+
+        // Per-section console state
+        const consoleState = {};
+
+        function getConsoleState(index) {
+            if (!consoleState[index]) {
+                consoleState[index] = {
+                    entries: [],       // all entries ever
+                    filter: 'all',     // all | log | warn | error | info
+                    search: '',
+                    history: [],       // input history
+                    historyPos: -1,
+                    counts: { log: 0, warn: 0, error: 0, info: 0 },
+                    lastMsg: null,     // for deduplication
+                    lastRepeat: 1,
+                };
+            }
+            return consoleState[index];
+        }
+
+        // Injected into iframe to capture console
+        const consoleCapture = `
+<script>
+(function() {
+  function serialize(val, depth) {
+    depth = depth || 0;
+    if (val === null) return { t: 'null', v: 'null' };
+    if (val === undefined) return { t: 'null', v: 'undefined' };
+    if (typeof val === 'string') return { t: 'string', v: val };
+    if (typeof val === 'number' || typeof val === 'bigint') return { t: 'number', v: String(val) };
+    if (typeof val === 'boolean') return { t: 'boolean', v: String(val) };
+    if (typeof val === 'function') return { t: 'function', v: 'ƒ ' + (val.name || 'anonymous') + '()' };
+    if (val instanceof Error) return { t: 'error', v: val.stack || val.message };
+    if (Array.isArray(val)) {
+      if (depth > 1) return { t: 'obj', v: '[Array(' + val.length + ')]', children: null };
+      return { t: 'array', v: 'Array(' + val.length + ')', children: val.slice(0,50).map((x,i)=>({k:String(i),v:serialize(x,depth+1)})) };
+    }
+    if (typeof val === 'object') {
+      try {
+        const keys = Object.keys(val).slice(0,30);
+        const preview = '{' + keys.slice(0,3).map(k => k + ': ' + JSON.stringify(val[k])).join(', ') + (keys.length > 3 ? ', ...' : '') + '}';
+        if (depth > 1) return { t: 'obj', v: preview, children: null };
+        return { t: 'obj', v: preview, children: keys.map(k => ({ k, v: serialize(val[k], depth+1) })) };
+      } catch(e) { return { t: 'obj', v: '[Object]', children: null }; }
+    }
+    return { t: 'unknown', v: String(val) };
+  }
+  const _send = (type, args) => {
+    try {
+      const parts = args.map(a => serialize(a));
+      window.parent.postMessage({ __ideConsole: true, type, parts, sectionIndex: window.__sectionIndex, ts: Date.now() }, '*');
+    } catch(e) {}
+  };
+  // Only capture explicit console.* calls — runtime errors are silently ignored
+  // unless the user adds console.error() themselves
+  ['log','warn','error','info'].forEach(t => {
+    const orig = console[t].bind(console);
+    console[t] = function(...args) { orig(...args); _send(t, args); };
+  });
+})();
+<\/script>`;
+
+        // Format a serialized part into HTML
+        function renderPart(part, inline) {
+            if (!part) return '<span class="con-null">undefined</span>';
+            if (part.t === 'string')   return inline
+                ? `<span class="con-string">"${escapeHtml(part.v)}"</span>`
+                : `<span>${escapeHtml(part.v)}</span>`;
+            if (part.t === 'number')   return `<span class="con-number">${escapeHtml(part.v)}</span>`;
+            if (part.t === 'boolean')  return `<span class="con-boolean">${part.v}</span>`;
+            if (part.t === 'null')     return `<span class="con-null">${part.v}</span>`;
+            if (part.t === 'function') return `<span class="con-boolean">${escapeHtml(part.v)}</span>`;
+            if (part.t === 'error')    return `<span style="color:#fca5a5;white-space:pre-wrap">${escapeHtml(part.v)}</span>`;
+            if (part.t === 'array' || part.t === 'obj') {
+                if (part.children && part.children.length > 0) {
+                    const id = 'ct' + Math.random().toString(36).slice(2);
+                    const childHTML = part.children.map(c =>
+                        `<div class="con-tree-row"><span class="con-key">${escapeHtml(c.k)}: </span>${renderPart(c.v, true)}</div>`
+                    ).join('');
+                    return `<span class="con-obj-preview con-expandable" onclick="toggleConTree('${id}')">${escapeHtml(part.v)} ▶</span><div class="con-tree" id="${id}">${childHTML}</div>`;
+                }
+                return `<span class="con-obj-preview">${escapeHtml(part.v)}</span>`;
+            }
+            return `<span>${escapeHtml(part.v ?? '')}</span>`;
+        }
+
+        function toggleConTree(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('open');
+            const prev = el.previousElementSibling;
+            if (prev) prev.textContent = prev.textContent.replace('▶','▼').replace('▼', el.classList.contains('open') ? '▼' : '▶');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        const TYPE_ICON = { log: '›', warn: '⚠', error: '✖', info: 'ℹ', input: '›' };
+
+        function formatTime(ts) {
+            const d = new Date(ts);
+            const pad = n => String(n).padStart(2,'0');
+            return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+        }
+
+        function addConsoleEntry(index, type, parts, ts, isInput) {
+            const state = getConsoleState(index);
+
+            // Build plain text for dedup check
+            const plainText = parts.map(p => p.v ?? '').join(' ');
+
+            // Deduplication - increment repeat counter
+            if (!isInput && state.lastMsg === type + plainText) {
+                state.lastRepeat++;
+                const sec = document.querySelectorAll('section')[index];
+                const lastRepeatEl = sec?.querySelector('.console-body .console-entry:last-child .con-repeat');
+                if (lastRepeatEl) { lastRepeatEl.textContent = state.lastRepeat; lastRepeatEl.classList.add('visible'); }
+                return;
+            }
+            state.lastMsg = isInput ? null : (type + plainText);
+            state.lastRepeat = 1;
+
+            // Store entry
+            const entry = { type, parts, ts: ts || Date.now(), isInput, plainText, id: 'ce' + Math.random().toString(36).slice(2) };
+            state.entries.push(entry);
+            if (!isInput) state.counts[type] = (state.counts[type] || 0) + 1;
+
+            // Render entry
+            const sec = document.querySelectorAll('section')[index];
+            if (!sec) return;
+            const body = sec.querySelector('.console-body');
+            if (!body) return;
+
+            const el = createEntryEl(entry, state);
+            body.appendChild(el);
+            body.scrollTop = body.scrollHeight;
+
+            // Update filter badges & error badge (passive - never auto-opens pane)
+            updateFilterBadges(index, sec, state);
+            applyEntryVisibility(el, state);
+            updateErrorBadge(index, sec, state);
+        }
+
+        function createEntryEl(entry, state) {
+            const el = document.createElement('div');
+            el.className = `console-entry type-${entry.type}${entry.isInput ? ' user-input' : ''}`;
+            el.dataset.type = entry.type;
+            el.dataset.plain = entry.plainText;
+            el.id = entry.id;
+
+            const icon = TYPE_ICON[entry.type] || '›';
+            const partsHTML = entry.isInput
+                ? `<span class="con-string">${escapeHtml(entry.plainText)}</span>`
+                : entry.parts.map(p => renderPart(p, entry.parts.length > 1)).join(' ');
+
+            el.innerHTML = `
+                <div class="con-gutter">
+                    <span class="con-repeat"></span>
+                    <span class="con-icon">${icon}</span>
+                </div>
+                <div class="con-message">${partsHTML}</div>
+                <span class="con-timestamp">${formatTime(entry.ts)}</span>
+            `;
+            return el;
+        }
+
+        function applyEntryVisibility(el, state) {
+            const typeOk = state.filter === 'all' || el.dataset.type === state.filter;
+            const searchOk = !state.search || (el.dataset.plain || '').toLowerCase().includes(state.search);
+            el.classList.toggle('hidden', !(typeOk && searchOk));
+        }
+
+        function applyAllFilters(index) {
+            const sec = document.querySelectorAll('section')[index];
+            if (!sec) return;
+            const state = getConsoleState(index);
+            sec.querySelectorAll('.console-body .console-entry').forEach(el => applyEntryVisibility(el, state));
+        }
+
+        function updateFilterBadges(index, sec, state) {
+            ['log','warn','error','info'].forEach(t => {
+                const btn = sec.querySelector(`.con-filter-btn.f-${t}`);
+                if (!btn) return;
+                const cnt = state.counts[t] || 0;
+                let badge = btn.querySelector('.con-count-badge');
+                if (cnt > 0) {
+                    if (!badge) { badge = document.createElement('span'); badge.className = 'con-count-badge'; btn.appendChild(badge); }
+                    badge.textContent = cnt > 99 ? '99+' : cnt;
+                    badge.style.background = t === 'warn' ? '#fbbf24' : t === 'error' ? '#f87171' : t === 'info' ? '#60a5fa' : '#334155';
+                    badge.style.color = '#fff';
+                }
+            });
+        }
+
+        function updateErrorBadge(index, sec, state) {
+            const badge = sec.querySelector('.con-error-count');
+            if (!badge) return;
+            const n = state.counts.error || 0;
+            badge.textContent = n > 9 ? '9+' : n;
+            badge.classList.toggle('visible', n > 0);
+        }
+
+        // Listen to messages from iframes
+        window.addEventListener('message', e => {
+            if (e.data && e.data.__ideConsole) {
+                addConsoleEntry(e.data.sectionIndex, e.data.type, e.data.parts, e.data.ts, false);
+            }
+        });
+
+        function openConsole(index) {
+            const sec = document.querySelectorAll('section')[index];
+            if (!sec) return;
+            const pane = sec.querySelector('.console-pane');
+            const btn = sec.querySelector('.console-toggle');
+            const isOpen = pane.classList.contains('open');
+            pane.classList.toggle('open', !isOpen);
+            btn.classList.toggle('active', !isOpen);
+            if (!isOpen) {
+                // Focus input on open
+                setTimeout(() => sec.querySelector('.con-input')?.focus(), 80);
+            }
+        }
+
+        function clearConsole(index) {
+            const sec = document.querySelectorAll('section')[index];
+            if (!sec) return;
+            const state = getConsoleState(index);
+            state.entries = [];
+            state.counts = { log: 0, warn: 0, error: 0, info: 0 };
+            state.lastMsg = null;
+            state.lastRepeat = 1;
+            sec.querySelector('.console-body').innerHTML = '';
+            // Reset filter badges
+            ['log','warn','error','info'].forEach(t => {
+                const btn = sec.querySelector(`.con-filter-btn.f-${t}`);
+                if (btn) { const b = btn.querySelector('.con-count-badge'); if (b) b.remove(); }
+            });
+            updateErrorBadge(index, sec, state);
+        }
+
+        function setConsoleFilter(index, filter) {
+            const sec = document.querySelectorAll('section')[index];
+            if (!sec) return;
+            const state = getConsoleState(index);
+            state.filter = filter;
+            sec.querySelectorAll('.con-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+            applyAllFilters(index);
+        }
+
+        function consoleSearch(index, query) {
+            const state = getConsoleState(index);
+            state.search = query.toLowerCase().trim();
+            applyAllFilters(index);
+        }
+
+        function consoleInputKeydown(e, index) {
+            const input = e.target;
+            const state = getConsoleState(index);
+
+            if (e.key === 'Enter') {
+                const code = input.value.trim();
+                if (!code) return;
+                // Add to history
+                state.history.unshift(code);
+                if (state.history.length > 50) state.history.pop();
+                state.historyPos = -1;
+                input.value = '';
+
+                // Show input echo
+                addConsoleEntry(index, 'log', [{ t: 'string', v: code }], Date.now(), true);
+
+                // Evaluate in iframe context
+                const sec = document.querySelectorAll('section')[index];
+                const iframe = sec?.querySelector('iframe');
+                if (iframe && iframe.contentWindow) {
+                    try {
+                        const result = iframe.contentWindow.eval(code);
+                        if (result !== undefined) {
+                            // Serialize result for display
+                            const serialized = serializeForDisplay(result);
+                            addConsoleEntry(index, 'log', [serialized], Date.now(), false);
+                        }
+                    } catch (err) {
+                        addConsoleEntry(index, 'error', [{ t: 'error', v: err.stack || err.message }], Date.now(), false);
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (state.history.length === 0) return;
+                state.historyPos = Math.min(state.historyPos + 1, state.history.length - 1);
+                input.value = state.history[state.historyPos];
+                setTimeout(() => { input.selectionStart = input.selectionEnd = input.value.length; }, 0);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                state.historyPos = Math.max(state.historyPos - 1, -1);
+                input.value = state.historyPos >= 0 ? state.history[state.historyPos] : '';
+            } else if (e.key === 'l' && e.ctrlKey) {
+                e.preventDefault();
+                clearConsole(index);
+            }
+        }
+
+        function serializeForDisplay(val) {
+            if (val === null) return { t: 'null', v: 'null' };
+            if (val === undefined) return { t: 'null', v: 'undefined' };
+            if (typeof val === 'string') return { t: 'string', v: val };
+            if (typeof val === 'number' || typeof val === 'bigint') return { t: 'number', v: String(val) };
+            if (typeof val === 'boolean') return { t: 'boolean', v: String(val) };
+            if (typeof val === 'function') return { t: 'function', v: 'ƒ ' + (val.name || 'anonymous') + '()' };
+            if (Array.isArray(val)) {
+                const children = val.slice(0,50).map((x,i) => ({ k: String(i), v: serializeForDisplay(x) }));
+                return { t: 'array', v: 'Array(' + val.length + ')', children };
+            }
+            if (typeof val === 'object') {
+                try {
+                    const keys = Object.keys(val).slice(0,30);
+                    const preview = '{' + keys.slice(0,3).map(k => k+': '+JSON.stringify(val[k])).join(', ') + (keys.length>3?', ...':'') + '}';
+                    const children = keys.map(k => ({ k, v: serializeForDisplay(val[k]) }));
+                    return { t: 'obj', v: preview, children };
+                } catch(e) { return { t: 'obj', v: '[Object]', children: null }; }
+            }
+            return { t: 'unknown', v: String(val) };
+        }
+
         function runCode(index) {
             const ed = editors[index];
             if (!ed) return;
@@ -854,12 +1457,13 @@
             const html = ed.html.getValue();
             const css = `<style>${ed.css.getValue()}</style>`;
             const js = `<scr` + `ipt>${ed.js.getValue()}</scr` + `ipt>`;
+            const sectionScript = `<scr` + `ipt>window.__sectionIndex=${index};</scr` + `ipt>`;
 
             const sec = document.querySelectorAll('section')[index];
             const iframe = sec.querySelector('iframe');
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             doc.open();
-            doc.write(html + css + js);
+            doc.write(sectionScript + consoleCapture + html + css + js);
             doc.close();
         }
 
@@ -871,7 +1475,6 @@
             if (ed.html.getValue()) zip.file('index.html', ed.html.getValue());
             if (ed.css.getValue()) zip.file('styles.css', ed.css.getValue());
             if (ed.js.getValue()) zip.file('script.js', ed.js.getValue());
-            if (ed.python.getValue()) zip.file('script.py', ed.python.getValue());
 
             zip.generateAsync({ type: 'blob' }).then(blob => {
                 saveAs(blob, `section_${index + 1}_code.zip`);
@@ -893,7 +1496,6 @@
                 if (ext === 'html') { ed.html.setValue(e.target.result); switchTab(index, 'html'); }
                 else if (ext === 'css') { ed.css.setValue(e.target.result); switchTab(index, 'css'); }
                 else if (ext === 'js') { ed.js.setValue(e.target.result); switchTab(index, 'js'); }
-                else if (ext === 'py') { ed.python.setValue(e.target.result); switchTab(index, 'python'); }
             };
             reader.readAsText(file);
         }
@@ -946,7 +1548,7 @@
             // Refresh editors so CodeMirror reflows
             const ed = editors[resizeState.index];
             if (ed) {
-                ['html', 'css', 'js', 'python'].forEach(t => ed[t].refresh());
+                ['html', 'css', 'js'].forEach(t => ed[t].refresh());
             }
         }
 
@@ -988,7 +1590,6 @@
             <button class="editor-tab active" data-tab="html" onclick="switchTab(${i},'html')">HTML</button>
             <button class="editor-tab" data-tab="css" onclick="switchTab(${i},'css')">CSS</button>
             <button class="editor-tab" data-tab="js" onclick="switchTab(${i},'js')">JavaScript</button>
-            <button class="editor-tab" data-tab="python" onclick="switchTab(${i},'python')">Python</button>
             <div class="editor-actions">
                 <button class="editor-btn" onclick="openGitModal(${i})">🦑 Git Import</button>
                 <button class="editor-btn" onclick="saveFiles(${i})">💾 Save</button>
@@ -1002,12 +1603,40 @@
                 <textarea class="ta-html"></textarea>
                 <textarea class="ta-css" style="display:none"></textarea>
                 <textarea class="ta-js" style="display:none"></textarea>
-                <textarea class="ta-python" style="display:none"></textarea>
             </div>
             <div class="resize-handle" onmousedown="startResize(event, ${i})"></div>
             <div class="output-pane">
-                <div class="output-label">▶ Live Preview</div>
+                <div class="output-label" style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                    <span>▶ Live Preview</span>
+                    <button class="console-toggle" onclick="openConsole(${i})" title="Toggle Console">
+                        ⬛ Console
+                        <span class="con-error-count"></span>
+                    </button>
+                </div>
                 <iframe sandbox="allow-scripts allow-same-origin"></iframe>
+                <div class="console-pane">
+                    <div class="console-toolbar">
+                        <span class="console-toolbar-title">Console</span>
+                        <div class="con-filter-btns">
+                            <button class="con-filter-btn active" data-filter="all" onclick="setConsoleFilter(${i},'all')">All</button>
+                            <button class="con-filter-btn f-log" data-filter="log" onclick="setConsoleFilter(${i},'log')">Log</button>
+                            <button class="con-filter-btn f-warn" data-filter="warn" onclick="setConsoleFilter(${i},'warn')">Warn</button>
+                            <button class="con-filter-btn f-error" data-filter="error" onclick="setConsoleFilter(${i},'error')">Error</button>
+                            <button class="con-filter-btn f-info" data-filter="info" onclick="setConsoleFilter(${i},'info')">Info</button>
+                        </div>
+                        <div class="console-search-wrap">
+                            <span class="console-search-icon">🔍</span>
+                            <input class="console-search" type="text" placeholder="Filter output..." oninput="consoleSearch(${i},this.value)">
+                        </div>
+                        <button class="con-btn-icon" onclick="clearConsole(${i})" title="Clear console">🚫</button>
+                        <button class="con-btn-icon" onclick="openConsole(${i})" title="Close console" style="font-size:0.7rem">✕</button>
+                    </div>
+                    <div class="console-body"></div>
+                    <div class="console-input-row">
+                        <span class="con-input-icon">›</span>
+                        <input class="con-input" type="text" placeholder="Run JavaScript in page context..." onkeydown="consoleInputKeydown(event,${i})" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -1197,7 +1826,6 @@
                     ed.html.setValue('');
                     ed.css.setValue('');
                     ed.js.setValue('');
-                    ed.python.setValue('');
 
                     // Update section header title
                     const sec = document.querySelectorAll('section')[sectionIdx];
@@ -1259,7 +1887,7 @@
         });
 
         // ========== KEYBOARD SHORTCUTS ==========
-        const TAB_ORDER = ['html', 'css', 'js', 'python'];
+        const TAB_ORDER = ['html', 'css', 'js'];
         let tabHeld = false;
 
         document.addEventListener('keyup', e => {
